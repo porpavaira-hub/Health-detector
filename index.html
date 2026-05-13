@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Health Detector App</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial, sans-serif;
+}
+
+body{
+    background:linear-gradient(135deg,#4facfe,#00f2fe);
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.container{
+    width:90%;
+    max-width:500px;
+    background:white;
+    padding:25px;
+    border-radius:15px;
+    box-shadow:0 5px 15px rgba(0,0,0,0.2);
+    position:relative;
+}
+
+h2{
+    text-align:center;
+    margin-bottom:20px;
+    color:#333;
+}
+
+input, select{
+    width:100%;
+    padding:12px;
+    margin:10px 0;
+    border:1px solid #ccc;
+    border-radius:8px;
+    outline:none;
+}
+
+button{
+    padding:12px 20px;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    background:#007bff;
+    color:white;
+    font-size:16px;
+    margin-top:10px;
+}
+
+button:hover{
+    background:#0056b3;
+}
+
+.arrowBtns{
+    display:flex;
+    justify-content:space-between;
+    margin-top:20px;
+}
+
+.arrow{
+    background:#28a745;
+    width:50px;
+    height:50px;
+    border-radius:50%;
+    font-size:22px;
+}
+
+.hidden{
+    display:none;
+}
+
+#adminBtn{
+    position:absolute;
+    top:15px;
+    right:15px;
+    background:#222;
+    padding:8px 15px;
+    font-size:14px;
+}
+
+.card{
+    background:#f1f1f1;
+    padding:12px;
+    border-radius:10px;
+    margin-top:10px;
+}
+
+.question{
+    font-size:18px;
+    margin-bottom:15px;
+    font-weight:bold;
+}
+
+.success{
+    color:green;
+    font-weight:bold;
+    text-align:center;
+    margin-top:15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<button id="adminBtn" onclick="openAdmin()">Admin</button>
+
+<!-- LOGIN -->
+<div id="loginPage">
+    <h2>Health Detector Login</h2>
+
+    <input type="text" id="username" placeholder="Enter Username">
+    <input type="password" id="password" placeholder="Enter Password">
+
+    <button onclick="login()">Login / Sign Up</button>
+</div>
+
+<!-- HEALTH DETAILS -->
+<div id="detailsPage" class="hidden">
+    <h2>Basic Health Details</h2>
+
+    <input type="text" id="name" placeholder="Full Name">
+    <input type="number" id="age" placeholder="Age">
+
+    <select id="gender">
+        <option value="">Select Gender</option>
+        <option>Male</option>
+        <option>Female</option>
+    </select>
+
+    <input type="number" id="height" placeholder="Height (cm)">
+    <input type="number" id="weight" placeholder="Weight (kg)">
+    <input type="text" id="disease" placeholder="Any Disease (optional)">
+
+    <div class="arrowBtns">
+        <button class="arrow" onclick="backToLogin()">⬅</button>
+        <button class="arrow" onclick="saveDetails()">➡</button>
+    </div>
+</div>
+
+<!-- DAILY QUESTIONS -->
+<div id="questionPage" class="hidden">
+    <h2>Daily Health Questions</h2>
+
+    <div class="question" id="questionText"></div>
+
+    <input type="text" id="answer" placeholder="Your Answer">
+
+    <div class="arrowBtns">
+        <button class="arrow" onclick="prevQuestion()">⬅</button>
+        <button class="arrow" onclick="nextQuestion()">➡</button>
+    </div>
+
+    <div class="success" id="doneMsg"></div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="adminPage" class="hidden">
+    <h2>Admin Dashboard</h2>
+
+    <div id="userData"></div>
+
+    <button onclick="closeAdmin()">Close</button>
+</div>
+
+</div>
+
+<script>
+
+let users = JSON.parse(localStorage.getItem("users")) || [];
+let currentUser = "";
+let currentQuestion = 0;
+
+let questions = [
+    "Did you drink enough water today?",
+    "How many hours did you sleep?",
+    "Did you exercise today?",
+    "Are you feeling stressed today?",
+    "Did you eat healthy food today?"
+];
+
+function login(){
+
+    let username = document.getElementById("username").value;
+    let password = document.getElementById("password").value;
+
+    if(username==="" || password===""){
+        alert("Enter username and password");
+        return;
+    }
+
+    let existingUser = users.find(u => u.username === username);
+
+    if(existingUser){
+        if(existingUser.password === password){
+            currentUser = existingUser;
+            alert("Login Successful");
+        }else{
+            alert("Wrong Password");
+            return;
+        }
+    }
+    else{
+        let newUser = {
+            username,
+            password,
+            details:{},
+            answers:[]
+        };
+
+        users.push(newUser);
+        localStorage.setItem("users", JSON.stringify(users));
+
+        currentUser = newUser;
+
+        alert("Account Created Automatically");
+    }
+
+    document.getElementById("loginPage").classList.add("hidden");
+    document.getElementById("detailsPage").classList.remove("hidden");
+}
+
+function backToLogin(){
+    document.getElementById("detailsPage").classList.add("hidden");
+    document.getElementById("loginPage").classList.remove("hidden");
+}
+
+function saveDetails(){
+
+    let details = {
+        name:document.getElementById("name").value,
+        age:document.getElementById("age").value,
+        gender:document.getElementById("gender").value,
+        height:document.getElementById("height").value,
+        weight:document.getElementById("weight").value,
+        disease:document.getElementById("disease").value
+    };
+
+    currentUser.details = details;
+
+    localStorage.setItem("users", JSON.stringify(users));
+
+    document.getElementById("detailsPage").classList.add("hidden");
+    document.getElementById("questionPage").classList.remove("hidden");
+
+    loadQuestion();
+}
+
+function loadQuestion(){
+    document.getElementById("questionText").innerText =
+        questions[currentQuestion];
+
+    document.getElementById("answer").value = "";
+}
+
+function nextQuestion(){
+
+    let ans = document.getElementById("answer").value;
+
+    currentUser.answers[currentQuestion] = ans;
+
+    localStorage.setItem("users", JSON.stringify(users));
+
+    if(currentQuestion < questions.length - 1){
+        currentQuestion++;
+        loadQuestion();
+    }
+    else{
+        document.getElementById("doneMsg").innerText =
+            "Daily Questions Completed Successfully!";
+    }
+}
+
+function prevQuestion(){
+
+    if(currentQuestion > 0){
+        currentQuestion--;
+        loadQuestion();
+    }
+}
+
+function openAdmin(){
+
+    let pass = prompt("Enter Admin Password");
+
+    if(pass === "admin"){
+
+        document.getElementById("loginPage").classList.add("hidden");
+        document.getElementById("detailsPage").classList.add("hidden");
+        document.getElementById("questionPage").classList.add("hidden");
+
+        document.getElementById("adminPage").classList.remove("hidden");
+
+        let data = "";
+
+        users.forEach((u,index)=>{
+
+            data += `
+            <div class="card">
+                <h3>User ${index+1}</h3>
+                <p><b>Username:</b> ${u.username}</p>
+                <p><b>Name:</b> ${u.details.name || ""}</p>
+                <p><b>Age:</b> ${u.details.age || ""}</p>
+                <p><b>Gender:</b> ${u.details.gender || ""}</p>
+                <p><b>Height:</b> ${u.details.height || ""}</p>
+                <p><b>Weight:</b> ${u.details.weight || ""}</p>
+                <p><b>Disease:</b> ${u.details.disease || ""}</p>
+            </div>
+            `;
+        });
+
+        document.getElementById("userData").innerHTML = data;
+    }
+    else{
+        alert("Wrong Admin Password");
+    }
+}
+
+function closeAdmin(){
+
+    document.getElementById("adminPage").classList.add("hidden");
+    document.getElementById("loginPage").classList.remove("hidden");
+}
+
+</script>
+
+</body>
+</html>
